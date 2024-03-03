@@ -89,7 +89,7 @@ class Polar {
 
     this.d3Svg
       .append("g")
-      .attr("transform", `translate(0, ${this._getCenter()[1]})`)
+      .attr("transform", `translate(${this._getCenter()[0] - this._getRadius()}, ${this._getCenter()[1]})`)
       .call(d3.axisBottom(bandScale));
   }
 

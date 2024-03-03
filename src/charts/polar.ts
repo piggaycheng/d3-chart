@@ -5,12 +5,20 @@ type Config = {
   width?: string | number;
   height?: string | number;
   angleAxis?: AngleAxis;
+  radiusAxis?: RadiusAxis;
 }
 
 type AngleAxis = {
   startAngle?: number;
   endAngle?: number;
   scaleWeight?: number[];
+}
+
+type RadiusAxis = {
+  categories: string[];
+  padding?: number;
+  innerPadding?: number;
+  outerPadding?: number;
 }
 
 class Polar {
@@ -22,6 +30,10 @@ class Polar {
       startAngle: 0,
       endAngle: Math.PI,
       scaleWeight: Array.from<number>({ length: 10 }).fill(1)
+    },
+    radiusAxis: {
+      categories: ["A", "B", "C"],
+      padding: 0.5
     }
   };
 
@@ -36,11 +48,16 @@ class Polar {
       .attr("width", finalConfig!.width!)
       .attr("height", finalConfig!.height!)
 
+    this._initAngleAxix(finalConfig);
+    this._initRadiusAxis(finalConfig);
+  }
+
+  _initAngleAxix(config: Config) {
     this.d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("path")
-      .data(this._getAngleAxis(finalConfig))
+      .data(this._getAngleAxis(config))
       .enter()
       .append("path")
       .attr("d", (data: any) => {
@@ -62,8 +79,18 @@ class Polar {
     return pie(config.angleAxis!.scaleWeight!)
   }
 
-  _initRadiusAxis() {
-    // TODO
+  _initRadiusAxis(config: Config) {
+    const bandScale = d3.scaleBand()
+      .range([0, this._getRadius()])
+      .domain(config.radiusAxis!.categories!)
+      .padding(config.radiusAxis!.padding!);
+    if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
+    if (config.radiusAxis?.outerPadding) bandScale.paddingInner(config.radiusAxis?.outerPadding);
+
+    this.d3Svg
+      .append("g")
+      .attr("transform", `translate(0, ${this._getCenter()[1]})`)
+      .call(d3.axisBottom(bandScale));
   }
 
   _getCenter() {

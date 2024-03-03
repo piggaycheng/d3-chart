@@ -1,17 +1,21 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
+import useMultiLinearScale from "../hooks/useMultiLinearScale"
 
 type Config = {
   width?: string | number;
   height?: string | number;
   angleAxis?: AngleAxis;
   radiusAxis?: RadiusAxis;
+  data: number[];
 }
 
 type AngleAxis = {
   startAngle?: number;
   endAngle?: number;
   scaleWeight?: number[];
+  maxValue?: number;
+  minValue?: number;
 }
 
 type RadiusAxis = {
@@ -29,12 +33,15 @@ class Polar {
     angleAxis: {
       startAngle: 0,
       endAngle: Math.PI,
-      scaleWeight: Array.from<number>({ length: 10 }).fill(1)
+      scaleWeight: Array.from<number>({ length: 10 }).fill(1),
+      maxValue: 100,
+      minValue: 0,
     },
     radiusAxis: {
       categories: ["A", "B", "C"],
       padding: 0.5
-    }
+    },
+    data: [30, 50, 70]
   };
 
   constructor(el: string | d3.BaseType, config?: Config) {
@@ -50,6 +57,7 @@ class Polar {
 
     this._initAngleAxix(finalConfig);
     this._initRadiusAxis(finalConfig);
+    this._initBar(finalConfig);
   }
 
   _initAngleAxix(config: Config) {
@@ -91,6 +99,42 @@ class Polar {
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0] - this._getRadius()}, ${this._getCenter()[1]})`)
       .call(d3.axisBottom(bandScale));
+  }
+
+  _initBar(config: Config) {
+    const domainRange = config.angleAxis!.maxValue! - config.angleAxis!.minValue!;
+    const domains = config.angleAxis!.scaleWeight!.reduce<number[][]>((acc, cur, index) => {
+      acc.push([index * domainRange / config.angleAxis!.scaleWeight!.length, (index + 1) * domainRange / config.angleAxis!.scaleWeight!.length]);
+      return acc
+    }, []);
+
+    const angleAxis = this._getAngleAxis(config);
+    const ranges = angleAxis.reduce<number[][]>((acc, cur, index) => {
+      acc.push([cur.startAngle, cur.endAngle])
+      return acc
+    }, []);
+
+    const multiLinearScaleHook = useMultiLinearScale(domains, ranges);
+    const bandScale = d3.scaleBand()
+      .range([0, this._getRadius()])
+      .domain(config.radiusAxis!.categories!)
+      .padding(config.radiusAxis!.padding!);
+    this.d3Svg
+      .append("g")
+      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
+      .selectAll("path")
+      .data(config.radiusAxis!.categories)
+      .enter()
+      .append("path")
+      .attr("d", (data: string, index) => {
+        return d3.arc()({
+          startAngle: config.angleAxis!.startAngle!,
+          endAngle: multiLinearScaleHook.scaleLinear(config.data[index])!,
+          outerRadius: this._getRadius() - bandScale(data)!,
+          innerRadius: this._getRadius() - bandScale(data)! - bandScale.bandwidth()
+        })
+      })
+      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
   }
 
   _getCenter() {

@@ -54,6 +54,7 @@ class Polar {
   };
   _finalConfig: Config;
   _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
+  _radiusAxisBandScale: d3.ScaleBand<string>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -171,12 +172,16 @@ class Polar {
   }
 
   _initRadiusAxis(config: Config) {
-    const bandScale = d3.scaleBand()
-      .range([0, this._getRadius(config)])
-      .domain(config.radiusAxis!.categories!)
-      .padding(config.radiusAxis!.padding!);
-    if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
-    if (config.radiusAxis?.outerPadding) bandScale.paddingInner(config.radiusAxis?.outerPadding);
+    let bandScale = this._radiusAxisBandScale;
+    if (!bandScale) {
+      bandScale = d3.scaleBand()
+        .range([0, this._getRadius(config)])
+        .domain(config.radiusAxis!.categories!)
+        .padding(config.radiusAxis!.padding!);
+      if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
+      if (config.radiusAxis?.outerPadding) bandScale.paddingOuter(config.radiusAxis?.outerPadding);
+      this._radiusAxisBandScale = bandScale;
+    }
 
     this._d3Svg
       .append("g")
@@ -198,10 +203,7 @@ class Polar {
     }, [config.angleAxis!.startAngle!]);
 
     const linearScale = d3.scaleLinear().domain(domain).range(range);
-    const bandScale = d3.scaleBand()
-      .range([0, this._getRadius(config)])
-      .domain(config.radiusAxis!.categories!)
-      .padding(config.radiusAxis!.padding!);
+    const bandScale = this._radiusAxisBandScale;
 
     let bars = this._bars;
     if (!bars) {

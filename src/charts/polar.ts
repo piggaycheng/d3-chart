@@ -1,6 +1,5 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
-import useMultiLinearScale from "../hooks/useMultiLinearScale"
 
 type Config = {
   width?: string | number;
@@ -103,18 +102,18 @@ class Polar {
 
   _initBar(config: Config) {
     const domainRange = config.angleAxis!.maxValue! - config.angleAxis!.minValue!;
-    const domains = config.angleAxis!.scaleWeight!.reduce<number[][]>((acc, cur, index) => {
-      acc.push([index * domainRange / config.angleAxis!.scaleWeight!.length, (index + 1) * domainRange / config.angleAxis!.scaleWeight!.length]);
+    const domain = config.angleAxis!.scaleWeight!.reduce<number[]>((acc, cur, index) => {
+      acc.push((index + 1) * (domainRange / config.angleAxis!.scaleWeight!.length));
       return acc
-    }, []);
+    }, [config.angleAxis!.minValue!]);
 
     const angleAxis = this._getAngleAxis(config);
-    const ranges = angleAxis.reduce<number[][]>((acc, cur, index) => {
-      acc.push([cur.startAngle, cur.endAngle])
+    const range = angleAxis.reduce<number[]>((acc, cur, index) => {
+      acc.push(cur.endAngle);
       return acc
-    }, []);
+    }, [config.angleAxis!.startAngle!]);
 
-    const multiLinearScaleHook = useMultiLinearScale(domains, ranges);
+    const linearScale = d3.scaleLinear().domain(domain).range(range);
     const bandScale = d3.scaleBand()
       .range([0, this._getRadius()])
       .domain(config.radiusAxis!.categories!)
@@ -129,7 +128,7 @@ class Polar {
       .attr("d", (data: string, index) => {
         return d3.arc()({
           startAngle: config.angleAxis!.startAngle!,
-          endAngle: multiLinearScaleHook.scaleLinear(config.data[index])!,
+          endAngle: linearScale(config.data[index])!,
           outerRadius: this._getRadius() - bandScale(data)!,
           innerRadius: this._getRadius() - bandScale(data)! - bandScale.bandwidth()
         })

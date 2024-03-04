@@ -31,8 +31,8 @@ type RadiusAxis = {
 }
 
 class Polar {
-  _d3Svg: d3.Selection<any, unknown, null, undefined>;
-  _defaultConfig: Config = {
+  private _d3Svg: d3.Selection<any, unknown, null, undefined>;
+  private _defaultConfig: Config = {
     width: 300,
     height: 150,
     padding: 25,
@@ -52,9 +52,9 @@ class Polar {
     },
     data: [30, 50, 70]
   };
-  _finalConfig: Config;
-  _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
-  _radiusAxisBandScale: d3.ScaleBand<string>;
+  private _finalConfig: Config;
+  private _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private _radiusAxisBandScale: d3.ScaleBand<string>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -73,7 +73,7 @@ class Polar {
     this._initBar(finalConfig);
   }
 
-  _initAngleAxis(config: Config) {
+  private _initAngleAxis(config: Config) {
     this._d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
@@ -105,7 +105,7 @@ class Polar {
       .attr("dominant-baseline", (tick) => tick.textSetting.baseline)
   }
 
-  _getAngleAxis(config: Config) {
+  private _getAngleAxis(config: Config) {
     const pie = d3.pie()
       .startAngle(config.angleAxis!.startAngle!)
       .endAngle(config.angleAxis!.endAngle!)
@@ -113,7 +113,7 @@ class Polar {
     return pie(config.angleAxis!.scaleWeight!)
   }
 
-  _getTicks(config: Config) {
+  private _getTicks(config: Config) {
     const radius = this._getRadius(config) + config.angleAxis!.tick!.distance!;
     const angleAxis = this._getAngleAxis(config);
     const svgCenter = this._getCenter();
@@ -133,7 +133,7 @@ class Polar {
     })
   }
 
-  _generateTextAnchor(angle: number) {
+  private _generateTextAnchor(angle: number) {
     const finalAngle = (angle % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
     const result: {
       anchor: string;
@@ -171,7 +171,7 @@ class Polar {
     return result
   }
 
-  _initRadiusAxis(config: Config) {
+  private _initRadiusAxis(config: Config) {
     let bandScale = this._radiusAxisBandScale;
     if (!bandScale) {
       bandScale = d3.scaleBand()
@@ -189,7 +189,7 @@ class Polar {
       .call(d3.axisBottom(bandScale));
   }
 
-  _initBar(config: Config) {
+  private _initBar(config: Config) {
     const domainRange = config.angleAxis!.maxValue! - config.angleAxis!.minValue!;
     const domain = config.angleAxis!.scaleWeight!.reduce<number[]>((acc, cur, index) => {
       acc.push((index + 1) * (domainRange / config.angleAxis!.scaleWeight!.length));
@@ -242,11 +242,11 @@ class Polar {
       )
   }
 
-  _getCenter() {
+  private _getCenter() {
     return [this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2]
   }
 
-  _getRadius(config: Config) {
+  private _getRadius(config: Config) {
     const padding = config.padding!
     return Math.min(this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2) - padding
   }

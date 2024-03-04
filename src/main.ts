@@ -12,3 +12,7 @@ const polar = new Polar("svg", {
   },
   data: [20, 40, 60]
 });
+
+setTimeout(() => {
+  polar.update([100, 50, 100])
+}, 3000);

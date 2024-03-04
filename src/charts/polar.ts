@@ -31,8 +31,8 @@ type RadiusAxis = {
 }
 
 class Polar {
-  d3Svg: d3.Selection<any, unknown, null, undefined>;
-  defaultConfig: Config = {
+  _d3Svg: d3.Selection<any, unknown, null, undefined>;
+  _defaultConfig: Config = {
     width: 300,
     height: 150,
     padding: 25,
@@ -52,15 +52,17 @@ class Polar {
     },
     data: [30, 50, 70]
   };
+  _finalConfig: Config;
 
   constructor(el: string | d3.BaseType, config?: Config) {
-    const finalConfig = _.mergeWith(this.defaultConfig, config, function (objValue, srcValue) {
+    const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
       if (_.isArray(objValue)) {
         return srcValue;
       }
     });
+    this._finalConfig = finalConfig;
 
-    this.d3Svg = d3.select(el as any)
+    this._d3Svg = d3.select(el as any)
       .attr("width", finalConfig!.width!)
       .attr("height", finalConfig!.height!)
 
@@ -70,7 +72,7 @@ class Polar {
   }
 
   _initAngleAxis(config: Config) {
-    this.d3Svg
+    this._d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("path")
@@ -88,7 +90,7 @@ class Polar {
       .attr("stroke", "#000")
 
     const ticks = this._getTicks(config);
-    this.d3Svg
+    this._d3Svg
       .append("g")
       .selectAll("text")
       .data(ticks)
@@ -175,7 +177,7 @@ class Polar {
     if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
     if (config.radiusAxis?.outerPadding) bandScale.paddingInner(config.radiusAxis?.outerPadding);
 
-    this.d3Svg
+    this._d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0] - this._getRadius(config)}, ${this._getCenter()[1]})`)
       .call(d3.axisBottom(bandScale));
@@ -199,32 +201,49 @@ class Polar {
       .range([0, this._getRadius(config)])
       .domain(config.radiusAxis!.categories!)
       .padding(config.radiusAxis!.padding!);
-    this.d3Svg
+    this._d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("path")
       .data(config.radiusAxis!.categories)
-      .enter()
-      .append("path")
-      .attr("d", (data: string, index) => {
-        return d3.arc()({
-          startAngle: config.angleAxis!.startAngle!,
-          endAngle: linearScale(config.data[index])!,
-          outerRadius: this._getRadius(config) - bandScale(data)!,
-          innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
-        })
-      })
-      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
-      .attr("fill-opacity", 0.9)
+      .join(
+        enter => enter
+          .append("path")
+          .attr("d", (data: string, index) => {
+            return d3.arc()({
+              startAngle: config.angleAxis!.startAngle!,
+              endAngle: linearScale(config.data[index])!,
+              outerRadius: this._getRadius(config) - bandScale(data)!,
+              innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
+            })
+          })
+          .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
+          .attr("fill-opacity", 0.9),
+        update => update
+          .attr("d", (data: string, index) => {
+            return d3.arc()({
+              startAngle: config.angleAxis!.startAngle!,
+              endAngle: linearScale(config.data[index])!,
+              outerRadius: this._getRadius(config) - bandScale(data)!,
+              innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
+            })
+          }),
+        exit => exit.remove()
+      )
   }
 
   _getCenter() {
-    return [this.d3Svg.node().clientWidth / 2, this.d3Svg.node().clientHeight / 2]
+    return [this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2]
   }
 
   _getRadius(config: Config) {
     const padding = config.padding!
-    return Math.min(this.d3Svg.node().clientWidth / 2, this.d3Svg.node().clientHeight / 2) - padding
+    return Math.min(this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2) - padding
+  }
+
+  update(data: number[]) {
+    this._finalConfig.data = data;
+    this._initBar(this._finalConfig);
   }
 }
 

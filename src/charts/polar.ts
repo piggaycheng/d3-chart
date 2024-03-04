@@ -53,6 +53,7 @@ class Polar {
     data: [30, 50, 70]
   };
   _finalConfig: Config;
+  _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -201,9 +202,16 @@ class Polar {
       .range([0, this._getRadius(config)])
       .domain(config.radiusAxis!.categories!)
       .padding(config.radiusAxis!.padding!);
-    this._d3Svg
-      .append("g")
-      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
+
+    let bars = this._bars;
+    if (!bars) {
+      bars = this._d3Svg
+        .append("g")
+        .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`);
+      this._bars = bars;
+    }
+
+    bars
       .selectAll("path")
       .data(config.radiusAxis!.categories)
       .join(

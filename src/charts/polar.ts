@@ -7,7 +7,7 @@ type Config = {
   padding?: number;
   angleAxis?: AngleAxis;
   radiusAxis?: RadiusAxis;
-  data: number[];
+  data: Data;
 }
 
 type AngleAxis = {
@@ -30,6 +30,21 @@ type RadiusAxis = {
   outerPadding?: number;
 }
 
+type Data = {
+  dataset: number[];
+  click?: (e: ClickDataEvent) => void;
+}
+
+interface ClickEvent {
+  event: PointerEvent;
+}
+
+interface ClickDataEvent extends ClickEvent {
+  index: number;
+  value: number | string;
+  category: string;
+}
+
 class Polar {
   private _d3Svg: d3.Selection<any, unknown, null, undefined>;
   private _defaultConfig: Config = {
@@ -50,7 +65,9 @@ class Polar {
       categories: ["A", "B", "C"],
       padding: 0.5
     },
-    data: [30, 50, 70]
+    data: {
+      dataset: [30, 50, 70]
+    }
   };
   private _finalConfig: Config;
   private _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -186,7 +203,14 @@ class Polar {
     this._d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0] - this._getRadius(config)}, ${this._getCenter()[1]})`)
-      .call(d3.axisBottom(bandScale));
+      .call(d3.axisBottom(bandScale))
+      .selectAll(".tick")
+      .each(function (p, j) {
+        // TODO
+        // console.log(this)
+        // console.log(p)
+        // console.log(j)
+      })
   }
 
   private _initBar(config: Config) {
@@ -222,22 +246,36 @@ class Polar {
           .attr("d", (data: string, index) => {
             return d3.arc()({
               startAngle: config.angleAxis!.startAngle!,
-              endAngle: linearScale(config.data[index])!,
+              endAngle: linearScale(config.data.dataset[index])!,
               outerRadius: this._getRadius(config) - bandScale(data)!,
               innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
             })
           })
           .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
-          .attr("fill-opacity", 0.9),
+          .attr("fill-opacity", 0.9)
+          .attr("data-index", (data: string, index) => index)
+          .attr("data-category", (data: string, index) => data)
+          .attr("data-value", (data: string, index) => config.data.dataset[index])
+          .on("click", (e: PointerEvent) => {
+            if (!config.data.click) return;
+            const clickEvent: ClickDataEvent = {
+              event: e,
+              index: Number((e.target as HTMLElement).dataset.index),
+              category: (e.target as HTMLElement).dataset.category!,
+              value: Number((e.target as HTMLElement).dataset.value),
+            }
+            config.data.click(clickEvent)
+          }),
         update => update
           .attr("d", (data: string, index) => {
             return d3.arc()({
               startAngle: config.angleAxis!.startAngle!,
-              endAngle: linearScale(config.data[index])!,
+              endAngle: linearScale(config.data.dataset[index])!,
               outerRadius: this._getRadius(config) - bandScale(data)!,
               innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
             })
-          }),
+          })
+          .attr("data-value", (data: string, index) => config.data.dataset[index]),
         exit => exit.remove()
       )
   }
@@ -251,8 +289,8 @@ class Polar {
     return Math.min(this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2) - padding
   }
 
-  update(data: number[]) {
-    this._finalConfig.data = data;
+  update(dataset: number[]) {
+    this._finalConfig.data.dataset = dataset;
     this._initBar(this._finalConfig);
   }
 }

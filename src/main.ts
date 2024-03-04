@@ -10,7 +10,9 @@ const polar = new Polar("svg", {
     endAngle: Math.PI * 2,
     scaleWeight: [2, 2, 2, 2, 2, 1, 1, 1, 1, 1]
   },
-  data: [20, 40, 60]
+  data: {
+    dataset: [20, 40, 60],
+  }
 });
 
 setTimeout(() => {

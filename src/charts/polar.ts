@@ -16,6 +16,11 @@ type AngleAxis = {
   scaleWeight?: number[];
   maxValue?: number;
   minValue?: number;
+  tick?: Tick;
+}
+
+type Tick = {
+  distance?: number;
 }
 
 type RadiusAxis = {
@@ -37,6 +42,9 @@ class Polar {
       scaleWeight: Array.from<number>({ length: 10 }).fill(1),
       maxValue: 100,
       minValue: 0,
+      tick: {
+        distance: 5
+      }
     },
     radiusAxis: {
       categories: ["A", "B", "C"],
@@ -89,7 +97,8 @@ class Polar {
       .text((tick) => tick.text)
       .attr("x", (tick) => tick.x)
       .attr("y", (tick) => tick.y)
-      .attr("text-anchor", "end")
+      .attr("text-anchor", (tick) => tick.textSetting.anchor)
+      .attr("dominant-baseline", (tick) => tick.textSetting.baseline)
   }
 
   _getAngleAxis(config: Config) {
@@ -101,7 +110,7 @@ class Polar {
   }
 
   _getTicks(config: Config) {
-    const radius = this._getRadius(config);
+    const radius = this._getRadius(config) + config.angleAxis!.tick!.distance!;
     const angleAxis = this._getAngleAxis(config);
     const svgCenter = this._getCenter();
 
@@ -115,8 +124,47 @@ class Polar {
         text: (index + 1) * rangePerTick,
         x: xArray[index],
         y: yArray[index],
+        textSetting: this._generateTextAnchor(angleAxis[index].endAngle)
       }
     })
+  }
+
+  _generateTextAnchor(angle: number) {
+    const finalAngle = (angle % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
+    const result: {
+      anchor: string;
+      baseline: string;
+    } = {
+      anchor: "",
+      baseline: ""
+    };
+
+    if (finalAngle >= 1.9 * Math.PI && finalAngle <= 2 * Math.PI) {
+      result.anchor = "middle"
+      result.baseline = "baseline"
+    } else if (finalAngle >= 0 && finalAngle <= 0.1 * Math.PI) {
+      result.anchor = "middle"
+      result.baseline = "baseline"
+    } else if (finalAngle >= 0.1 * Math.PI && finalAngle <= 0.5 * Math.PI) {
+      result.anchor = "start"
+      result.baseline = "baseline"
+    } else if (finalAngle >= 0.5 * Math.PI && finalAngle <= 0.9 * Math.PI) {
+      result.anchor = "start"
+      result.baseline = "hanging"
+    } else if (finalAngle >= 0.9 * Math.PI && finalAngle <= Math.PI) {
+      result.anchor = "middle"
+      result.baseline = "hanging"
+    } else if (finalAngle >= Math.PI && finalAngle <= 1.1 * Math.PI) {
+      result.anchor = "middle"
+      result.baseline = "hanging"
+    } else if (finalAngle >= 1.1 * Math.PI && finalAngle <= 1.5 * Math.PI) {
+      result.anchor = "end"
+      result.baseline = "hanging"
+    } else if (finalAngle >= 1.5 * Math.PI && finalAngle <= 1.9 * Math.PI) {
+      result.anchor = "end"
+      result.baseline = "baseline"
+    }
+    return result
   }
 
   _initRadiusAxis(config: Config) {
@@ -167,6 +215,7 @@ class Polar {
         })
       })
       .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
+      .attr("fill-opacity", 0.9)
   }
 
   _getCenter() {

@@ -56,12 +56,12 @@ class Polar {
       .attr("width", finalConfig!.width!)
       .attr("height", finalConfig!.height!)
 
-    this._initAngleAxix(finalConfig);
+    this._initAngleAxis(finalConfig);
     this._initRadiusAxis(finalConfig);
     this._initBar(finalConfig);
   }
 
-  _initAngleAxix(config: Config) {
+  _initAngleAxis(config: Config) {
     this.d3Svg
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)

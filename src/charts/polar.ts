@@ -142,7 +142,7 @@ class Polar {
     const angleAxis = this._getAngleAxis(config);
     const svgCenter = this._getCenter();
 
-    const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis?.scaleWeight?.length);
+    const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const xArray = ticks.reduce<number[]>((acc, cur, index) => {
       if (index === 0) return acc
       acc.push(svgCenter[0] + radius * Math.cos(angleAxis[index - 1].endAngle - Math.PI * 0.5))
@@ -237,12 +237,7 @@ class Polar {
   }
 
   private _initBar(config: Config) {
-    const domainRange = config.angleAxis!.maxValue! - config.angleAxis!.minValue!;
-    const domain = config.angleAxis!.scaleWeight!.reduce<number[]>((acc, cur, index) => {
-      acc.push((index + 1) * (domainRange / config.angleAxis!.scaleWeight!.length));
-      return acc
-    }, [config.angleAxis!.minValue!]);
-
+    const domain = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const angleAxis = this._getAngleAxis(config);
     const range = angleAxis.reduce<number[]>((acc, cur, index) => {
       acc.push(cur.endAngle);

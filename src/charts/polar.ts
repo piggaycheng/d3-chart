@@ -220,20 +220,6 @@ class Polar {
       .selectAll("path")
       .data(config.radiusAxis!.categories)
       .join("path")
-      .attr("d", (data: string, index) => {
-        return d3.arc()({
-          startAngle: config.angleAxis!.startAngle!,
-          endAngle: linearScale(config.data.dataset[index])!,
-          outerRadius: this._getRadius(config) - bandScale(data)!,
-          innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
-        })
-      })
-      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
-      .attr("fill-opacity", 0.9)
-      .attr("data-index", (data: string, index) => index)
-      .attr("data-category", (data: string, index) => data)
-      .attr("data-value", (data: string, index) => config.data.dataset[index])
-      .style("cursor", "pointer")
       .on("click", (e: PointerEvent) => {
         if (!config.data.click) return;
         const clickEvent: ClickDataEvent = {
@@ -244,6 +230,25 @@ class Polar {
         }
         config.data.click(clickEvent)
       })
+      .transition()
+      .duration(1000)
+      .attrTween("d", (data: string, index) => {
+        const interpolate = d3.interpolateNumber(config.angleAxis!.startAngle!, linearScale(config.data.dataset[index])!)
+        return (t) => {
+          return d3.arc()({
+            startAngle: config.angleAxis!.startAngle!,
+            endAngle: interpolate(t),
+            outerRadius: this._getRadius(config) - bandScale(data)!,
+            innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
+          })!
+        }
+      })
+      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
+      .attr("fill-opacity", 1)
+      .attr("data-index", (data: string, index) => index)
+      .attr("data-category", (data: string, index) => data)
+      .attr("data-value", (data: string, index) => config.data.dataset[index])
+      .style("cursor", "pointer")
 
     this._initBarText(bars, linearScale, config);
   }

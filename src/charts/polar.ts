@@ -28,6 +28,7 @@ type RadiusAxis = {
   padding?: number;
   innerPadding?: number;
   outerPadding?: number;
+  click?: (e: ClickLabelEvent) => void;
 }
 
 type Data = {
@@ -40,6 +41,12 @@ interface ClickEvent {
 }
 
 interface ClickDataEvent extends ClickEvent {
+  index: number;
+  value: number | string;
+  category: string;
+}
+
+interface ClickLabelEvent extends ClickEvent {
   index: number;
   value: number | string;
   category: string;
@@ -205,11 +212,19 @@ class Polar {
       .attr("transform", `translate(${this._getCenter()[0] - this._getRadius(config)}, ${this._getCenter()[1]})`)
       .call(d3.axisBottom(bandScale))
       .selectAll(".tick")
-      .each(function (p, j) {
-        // TODO
-        // console.log(this)
-        // console.log(p)
-        // console.log(j)
+      .style("cursor", "pointer")
+      .each(function (p, i) {
+        d3.select(this)
+          .on("click", (e: PointerEvent) => {
+            if (!config.radiusAxis?.click) return;
+            const clickEvent: ClickLabelEvent = {
+              event: e,
+              index: i,
+              category: config.radiusAxis.categories[i],
+              value: config.data.dataset[i],
+            }
+            config.radiusAxis.click(clickEvent)
+          })
       })
   }
 

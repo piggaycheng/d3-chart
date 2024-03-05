@@ -230,6 +230,12 @@ class Polar {
         }
         config.data.click(clickEvent)
       })
+      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
+      .attr("fill-opacity", 1)
+      .attr("data-index", (data: string, index) => index)
+      .attr("data-category", (data: string, index) => data)
+      .attr("data-value", (data: string, index) => config.data.dataset[index])
+      .style("cursor", "pointer")
       .transition()
       .duration(1000)
       .attrTween("d", (data: string, index) => {
@@ -243,12 +249,6 @@ class Polar {
           })!
         }
       })
-      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
-      .attr("fill-opacity", 1)
-      .attr("data-index", (data: string, index) => index)
-      .attr("data-category", (data: string, index) => data)
-      .attr("data-value", (data: string, index) => config.data.dataset[index])
-      .style("cursor", "pointer")
 
     this._initBarText(bars, linearScale, config);
   }

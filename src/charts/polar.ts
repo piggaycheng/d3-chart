@@ -79,6 +79,7 @@ class Polar {
   private _finalConfig: Config;
   private _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _radiusAxisBandScale: d3.ScaleBand<string>;
+  private _barText: d3.Selection<SVGGElement, unknown, null, undefined>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -258,45 +259,62 @@ class Polar {
     bars
       .selectAll("path")
       .data(config.radiusAxis!.categories)
-      .join(
-        enter => enter
-          .append("path")
-          .attr("d", (data: string, index) => {
-            return d3.arc()({
-              startAngle: config.angleAxis!.startAngle!,
-              endAngle: linearScale(config.data.dataset[index])!,
-              outerRadius: this._getRadius(config) - bandScale(data)!,
-              innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
-            })
-          })
-          .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
-          .attr("fill-opacity", 0.9)
-          .attr("data-index", (data: string, index) => index)
-          .attr("data-category", (data: string, index) => data)
-          .attr("data-value", (data: string, index) => config.data.dataset[index])
-          .style("cursor", "pointer")
-          .on("click", (e: PointerEvent) => {
-            if (!config.data.click) return;
-            const clickEvent: ClickDataEvent = {
-              event: e,
-              index: Number((e.target as HTMLElement).dataset.index),
-              category: (e.target as HTMLElement).dataset.category!,
-              value: Number((e.target as HTMLElement).dataset.value),
-            }
-            config.data.click(clickEvent)
-          }),
-        update => update
-          .attr("d", (data: string, index) => {
-            return d3.arc()({
-              startAngle: config.angleAxis!.startAngle!,
-              endAngle: linearScale(config.data.dataset[index])!,
-              outerRadius: this._getRadius(config) - bandScale(data)!,
-              innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
-            })
-          })
-          .attr("data-value", (data: string, index) => config.data.dataset[index]),
-        exit => exit.remove()
-      )
+      .join("path")
+      .attr("d", (data: string, index) => {
+        return d3.arc()({
+          startAngle: config.angleAxis!.startAngle!,
+          endAngle: linearScale(config.data.dataset[index])!,
+          outerRadius: this._getRadius(config) - bandScale(data)!,
+          innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
+        })
+      })
+      .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
+      .attr("fill-opacity", 0.9)
+      .attr("data-index", (data: string, index) => index)
+      .attr("data-category", (data: string, index) => data)
+      .attr("data-value", (data: string, index) => config.data.dataset[index])
+      .style("cursor", "pointer")
+      .on("click", (e: PointerEvent) => {
+        if (!config.data.click) return;
+        const clickEvent: ClickDataEvent = {
+          event: e,
+          index: Number((e.target as HTMLElement).dataset.index),
+          category: (e.target as HTMLElement).dataset.category!,
+          value: Number((e.target as HTMLElement).dataset.value),
+        }
+        config.data.click(clickEvent)
+      })
+
+    this._initBarText(bars, linearScale, config);
+  }
+
+  private _initBarText(bars: d3.Selection<SVGGElement, unknown, null, undefined>, linearScale: d3.ScaleLinear<number, number, never>, config: Config) {
+    const radius = this._getRadius(config);
+    const svgCenter = this._getCenter();
+    const bandScale = this._radiusAxisBandScale;
+
+    let barText = this._barText;
+    if (!barText) {
+      barText = this._d3Svg
+        .append("g")
+      this._barText = barText;
+    }
+
+    barText
+      .selectAll("text")
+      .data(config.data.dataset)
+      .join("text")
+      .attr("x", (data: number, index) => {
+        const middle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
+        return svgCenter[0] + (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.cos(middle - Math.PI * 0.5)
+      })
+      .attr("y", (data: number, index) => {
+        const middle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
+        return svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.sin(middle + Math.PI * 0.5)
+      })
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .text((data) => data)
   }
 
   private _getCenter() {

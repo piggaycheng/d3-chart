@@ -271,6 +271,7 @@ class Polar {
           .attr("data-index", (data: string, index) => index)
           .attr("data-category", (data: string, index) => data)
           .attr("data-value", (data: string, index) => config.data.dataset[index])
+          .style("cursor", "pointer")
           .on("click", (e: PointerEvent) => {
             if (!config.data.click) return;
             const clickEvent: ClickDataEvent = {

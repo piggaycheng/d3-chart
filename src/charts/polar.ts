@@ -126,8 +126,8 @@ class Polar {
       .text((tick) => tick.text)
       .attr("x", (tick) => tick.x)
       .attr("y", (tick) => tick.y)
-      .attr("text-anchor", (tick) => tick.textSetting.anchor)
-      .attr("dominant-baseline", (tick) => tick.textSetting.baseline)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle");
   }
 
   private _getAngleAxis(config: Config) {
@@ -156,52 +156,12 @@ class Polar {
     }, [svgCenter[1] - radius * Math.sin(config.angleAxis!.startAngle! + Math.PI * 0.5)]);
 
     return ticks.map((tick, index) => {
-      const textSetting = index === 0 ? this._generateTextAnchor(config.angleAxis!.startAngle!) : this._generateTextAnchor(angleAxis[index - 1].endAngle)
       return {
         text: tick,
         x: xArray[index],
         y: yArray[index],
-        textSetting: textSetting
       }
     })
-  }
-
-  private _generateTextAnchor(angle: number) {
-    const finalAngle = (angle % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
-    const result: {
-      anchor: string;
-      baseline: string;
-    } = {
-      anchor: "",
-      baseline: ""
-    };
-
-    if (finalAngle >= 1.9 * Math.PI && finalAngle <= 2 * Math.PI) {
-      result.anchor = "middle"
-      result.baseline = "baseline"
-    } else if (finalAngle >= 0 && finalAngle <= 0.1 * Math.PI) {
-      result.anchor = "middle"
-      result.baseline = "baseline"
-    } else if (finalAngle >= 0.1 * Math.PI && finalAngle <= 0.5 * Math.PI) {
-      result.anchor = "start"
-      result.baseline = "baseline"
-    } else if (finalAngle >= 0.5 * Math.PI && finalAngle <= 0.9 * Math.PI) {
-      result.anchor = "start"
-      result.baseline = "hanging"
-    } else if (finalAngle >= 0.9 * Math.PI && finalAngle <= Math.PI) {
-      result.anchor = "middle"
-      result.baseline = "hanging"
-    } else if (finalAngle >= Math.PI && finalAngle <= 1.1 * Math.PI) {
-      result.anchor = "middle"
-      result.baseline = "hanging"
-    } else if (finalAngle >= 1.1 * Math.PI && finalAngle < 1.5 * Math.PI) {
-      result.anchor = "end"
-      result.baseline = "hanging"
-    } else if (finalAngle >= 1.5 * Math.PI && finalAngle <= 1.9 * Math.PI) {
-      result.anchor = "end"
-      result.baseline = "baseline"
-    }
-    return result
   }
 
   private _initRadiusAxis(config: Config) {

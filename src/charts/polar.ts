@@ -142,17 +142,25 @@ class Polar {
     const angleAxis = this._getAngleAxis(config);
     const svgCenter = this._getCenter();
 
-    const xArray = angleAxis.map((item) => svgCenter[0] + radius * Math.cos(item.endAngle - Math.PI * 0.5));
-    const yArray = angleAxis.map((item) => svgCenter[1] - radius * Math.sin(item.endAngle + Math.PI * 0.5));
+    const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis?.scaleWeight?.length);
+    const xArray = ticks.reduce<number[]>((acc, cur, index) => {
+      if (index === 0) return acc
+      acc.push(svgCenter[0] + radius * Math.cos(angleAxis[index - 1].endAngle - Math.PI * 0.5))
+      return acc
+    }, [svgCenter[0] + radius * Math.cos(config.angleAxis!.startAngle! - Math.PI * 0.5)]);
+    const yArray = ticks.reduce<number[]>((acc, cur, index) => {
+      if (index === 0) return acc
+      acc.push(svgCenter[1] - radius * Math.sin(angleAxis[index - 1].endAngle + Math.PI * 0.5))
+      return acc
+    }, [svgCenter[1] - radius * Math.sin(config.angleAxis!.startAngle! + Math.PI * 0.5)]);
 
-    const range = config.angleAxis!.maxValue! - config.angleAxis!.minValue!;
-    const rangePerTick = range / config.angleAxis!.scaleWeight!.length;
-    return config.angleAxis!.scaleWeight!.map((item, index) => {
+    return ticks.map((tick, index) => {
+      const textSetting = index === 0 ? this._generateTextAnchor(config.angleAxis!.startAngle!) : this._generateTextAnchor(angleAxis[index - 1].endAngle)
       return {
-        text: (index + 1) * rangePerTick,
+        text: tick,
         x: xArray[index],
         y: yArray[index],
-        textSetting: this._generateTextAnchor(angleAxis[index].endAngle)
+        textSetting: textSetting
       }
     })
   }
@@ -185,7 +193,7 @@ class Polar {
     } else if (finalAngle >= Math.PI && finalAngle <= 1.1 * Math.PI) {
       result.anchor = "middle"
       result.baseline = "hanging"
-    } else if (finalAngle >= 1.1 * Math.PI && finalAngle <= 1.5 * Math.PI) {
+    } else if (finalAngle >= 1.1 * Math.PI && finalAngle < 1.5 * Math.PI) {
       result.anchor = "end"
       result.baseline = "hanging"
     } else if (finalAngle >= 1.5 * Math.PI && finalAngle <= 1.9 * Math.PI) {

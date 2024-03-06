@@ -1,56 +1,9 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
 
-type Config = {
-  width?: string | number;
-  height?: string | number;
-  padding?: number;
-  angleAxis?: AngleAxis;
-  radiusAxis?: RadiusAxis;
-  data: Data;
-}
-
-type AngleAxis = {
-  startAngle?: number;
-  endAngle?: number;
-  scaleWeight?: number[];
-  maxValue?: number;
-  minValue?: number;
-  tick?: Tick;
-}
-
-type Tick = {
-  distance?: number;
-}
-
-type RadiusAxis = {
-  categories: string[];
-  padding?: number;
-  innerPadding?: number;
-  outerPadding?: number;
-  click?: (e: ClickLabelEvent) => void;
-}
-
-type Data = {
-  dataset: number[];
-  click?: (e: ClickDataEvent) => void;
-}
-
-interface ClickEvent {
-  event: PointerEvent;
-}
-
-interface ClickDataEvent extends ClickEvent {
-  index: number;
-  value: number | string;
-  category: string;
-}
-
-interface ClickLabelEvent extends ClickEvent {
-  index: number;
-  value: number | string;
-  category: string;
-}
+type Config = PolarTypes.Config
+type ClickLabelEvent = PolarTypes.ClickLabelEvent
+type ClickDataEvent = PolarTypes.ClickDataEvent
 
 class Polar {
   private _d3Svg: d3.Selection<any, unknown, null, undefined>;

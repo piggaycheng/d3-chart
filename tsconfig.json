@@ -8,6 +8,11 @@
     "jsx": "react",
     "allowJs": true,
     "moduleResolution": "node",
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "downlevelIteration": true,
+    "importHelpers": true,
+    "paths": {
+      "tslib" : ["./node_modules/tslib/tslib.d.ts"]
+    },
   }
 }

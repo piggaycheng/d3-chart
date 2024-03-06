@@ -5,6 +5,7 @@ const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 container.append(svgEl)
 document.querySelector("body")!.append(container);
 const polar = new Polar("svg", {
+  type: "polar",
   width: 500,
   height: 500,
   angleAxis: {

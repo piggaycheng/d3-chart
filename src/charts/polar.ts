@@ -8,6 +8,7 @@ type ClickDataEvent = PolarTypes.ClickDataEvent
 class Polar {
   private _d3Svg: d3.Selection<any, unknown, null, undefined>;
   private _defaultConfig: Config = {
+    type: "polar",
     width: 300,
     height: 150,
     padding: 25,

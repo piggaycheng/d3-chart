@@ -1,5 +1,5 @@
 declare namespace PolarTypes {
-  type Config = {
+  interface Config extends Chart.Config {
     width?: string | number;
     height?: string | number;
     padding?: number;
@@ -8,7 +8,7 @@ declare namespace PolarTypes {
     data: Data;
   }
 
-  type AngleAxis = {
+  interface AngleAxis {
     startAngle?: number;
     endAngle?: number;
     scaleWeight?: number[];
@@ -17,11 +17,11 @@ declare namespace PolarTypes {
     tick?: Tick;
   }
 
-  type Tick = {
+  interface Tick {
     distance?: number;
   }
 
-  type RadiusAxis = {
+  interface RadiusAxis {
     categories: string[];
     padding?: number;
     innerPadding?: number;
@@ -29,7 +29,7 @@ declare namespace PolarTypes {
     click?: (e: ClickLabelEvent) => void;
   }
 
-  type Data = {
+  interface Data {
     dataset: number[];
     click?: (e: ClickDataEvent) => void;
   }

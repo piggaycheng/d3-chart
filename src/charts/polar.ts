@@ -7,7 +7,6 @@ type ClickLabelEvent = PolarType.ClickLabelEvent
 type ClickDataEvent = PolarType.ClickDataEvent
 
 class Polar {
-  private _d3Svg: d3.Selection<any, unknown, null, undefined>;
   private _defaultConfig: Config = {
     type: "polar",
     width: 300,
@@ -32,9 +31,10 @@ class Polar {
     }
   };
   private _finalConfig: Config;
-  private _bars: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private _radiusAxisBandScale: d3.ScaleBand<string>;
-  private _barText: d3.Selection<SVGGElement, unknown, null, undefined>;
+
+  private _svgSelection: d3.Selection<any, unknown, null, undefined>;
+  private _barSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private _barTextSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -44,7 +44,7 @@ class Polar {
     });
     this._finalConfig = finalConfig;
 
-    this._d3Svg = d3.select(el as any)
+    this._svgSelection = d3.select(el as any)
       .attr("width", finalConfig!.width!)
       .attr("height", finalConfig!.height!)
 
@@ -54,7 +54,7 @@ class Polar {
   }
 
   private _initAngleAxis(config: Config) {
-    this._d3Svg
+    this._svgSelection
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("path")
@@ -72,7 +72,7 @@ class Polar {
       .attr("stroke", "#000")
 
     const ticks = this._getTicks(config);
-    this._d3Svg
+    this._svgSelection
       .append("g")
       .selectAll("text")
       .data(ticks)
@@ -120,18 +120,9 @@ class Polar {
   }
 
   private _initRadiusAxis(config: Config) {
-    let bandScale = this._radiusAxisBandScale;
-    if (!bandScale) {
-      bandScale = d3.scaleBand()
-        .range([0, this._getRadius(config)])
-        .domain(config.radiusAxis!.categories!)
-        .padding(config.radiusAxis!.padding!);
-      if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
-      if (config.radiusAxis?.outerPadding) bandScale.paddingOuter(config.radiusAxis?.outerPadding);
-      this._radiusAxisBandScale = bandScale;
-    }
+    const bandScale = this._getRadiusAxisBandScale(config);
 
-    this._d3Svg
+    this._svgSelection
       .append("g")
       .attr("transform", `translate(${this._getCenter()[0] - this._getRadius(config)}, ${this._getCenter()[1]})`)
       .call(d3.axisBottom(bandScale))
@@ -152,16 +143,26 @@ class Polar {
       })
   }
 
+  private _getRadiusAxisBandScale(config: Config) {
+    const bandScale = d3.scaleBand()
+      .range([0, this._getRadius(config)])
+      .domain(config.radiusAxis!.categories!)
+      .padding(config.radiusAxis!.padding!);
+    if (config.radiusAxis?.innerPadding) bandScale.paddingInner(config.radiusAxis?.innerPadding);
+    if (config.radiusAxis?.outerPadding) bandScale.paddingOuter(config.radiusAxis?.outerPadding);
+    return bandScale
+  }
+
   private _initBar(config: Config) {
     const dataTransitionHook = useDataTransition();
     const tweens = dataTransitionHook.generatePolarTween(config, this._getAngleAxis(config), this._getRadius(config))
 
-    let bars = this._bars;
+    let bars = this._barSelection;
     if (!bars) {
-      bars = this._d3Svg
+      bars = this._svgSelection
         .append("g")
         .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`);
-      this._bars = bars;
+      this._barSelection = bars;
     }
 
     bars
@@ -188,19 +189,19 @@ class Polar {
       .duration(1000)
       .attrTween("d", (data: string, index) => tweens[index])
 
-      // this._initBarText(bars, linearScale, config);
+    // this._initBarText(bars, linearScale, config);
   }
 
   private _initBarText(bars: d3.Selection<SVGGElement, unknown, null, undefined>, linearScale: d3.ScaleLinear<number, number, never>, config: Config) {
     const radius = this._getRadius(config);
     const svgCenter = this._getCenter();
-    const bandScale = this._radiusAxisBandScale;
+    const bandScale = this._getRadiusAxisBandScale(config);
 
-    let barText = this._barText;
+    let barText = this._barTextSelection;
     if (!barText) {
-      barText = this._d3Svg
+      barText = this._svgSelection
         .append("g")
-      this._barText = barText;
+      this._barTextSelection = barText;
     }
 
     barText
@@ -221,12 +222,12 @@ class Polar {
   }
 
   private _getCenter() {
-    return [this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2]
+    return [this._svgSelection.node().clientWidth / 2, this._svgSelection.node().clientHeight / 2]
   }
 
   private _getRadius(config: Config) {
     const padding = config.padding!
-    return Math.min(this._d3Svg.node().clientWidth / 2, this._d3Svg.node().clientHeight / 2) - padding
+    return Math.min(this._svgSelection.node().clientWidth / 2, this._svgSelection.node().clientHeight / 2) - padding
   }
 
   update(dataset: number[]) {

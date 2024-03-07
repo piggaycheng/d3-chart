@@ -1,9 +1,10 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
+import { useDataTransition } from "../hooks/useTransition"
 
-type Config = PolarTypes.Config
-type ClickLabelEvent = PolarTypes.ClickLabelEvent
-type ClickDataEvent = PolarTypes.ClickDataEvent
+type Config = PolarType.Config
+type ClickLabelEvent = PolarType.ClickLabelEvent
+type ClickDataEvent = PolarType.ClickDataEvent
 
 class Polar {
   private _d3Svg: d3.Selection<any, unknown, null, undefined>;
@@ -89,7 +90,7 @@ class Polar {
       .startAngle(config.angleAxis!.startAngle!)
       .endAngle(config.angleAxis!.endAngle!)
       .sort((a, b) => d3.ascending((a as any).index, (b as any).index));
-    return pie(config.angleAxis!.scaleWeight!)
+    return pie(config.angleAxis!.scaleWeight!) as d3.PieArcDatum<number>[]
   }
 
   private _getTicks(config: Config) {
@@ -152,15 +153,8 @@ class Polar {
   }
 
   private _initBar(config: Config) {
-    const domain = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
-    const angleAxis = this._getAngleAxis(config);
-    const range = angleAxis.reduce<number[]>((acc, cur, index) => {
-      acc.push(cur.endAngle);
-      return acc
-    }, [config.angleAxis!.startAngle!]);
-
-    const linearScale = d3.scaleLinear().domain(domain).range(range);
-    const bandScale = this._radiusAxisBandScale;
+    const dataTransitionHook = useDataTransition();
+    const tweens = dataTransitionHook.generatePolarTween(config, this._getAngleAxis(config), this._getRadius(config))
 
     let bars = this._bars;
     if (!bars) {
@@ -192,19 +186,9 @@ class Polar {
       .style("cursor", "pointer")
       .transition()
       .duration(1000)
-      .attrTween("d", (data: string, index) => {
-        const interpolate = d3.interpolateNumber(config.angleAxis!.startAngle!, linearScale(config.data.dataset[index])!)
-        return (t) => {
-          return d3.arc()({
-            startAngle: config.angleAxis!.startAngle!,
-            endAngle: interpolate(t),
-            outerRadius: this._getRadius(config) - bandScale(data)!,
-            innerRadius: this._getRadius(config) - bandScale(data)! - bandScale.bandwidth()
-          })!
-        }
-      })
+      .attrTween("d", (data: string, index) => tweens[index])
 
-    this._initBarText(bars, linearScale, config);
+      // this._initBarText(bars, linearScale, config);
   }
 
   private _initBarText(bars: d3.Selection<SVGGElement, unknown, null, undefined>, linearScale: d3.ScaleLinear<number, number, never>, config: Config) {

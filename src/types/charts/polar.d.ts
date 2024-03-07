@@ -1,4 +1,4 @@
-declare namespace PolarTypes {
+declare namespace PolarType {
   interface Config extends Chart.Config {
     width?: string | number;
     height?: string | number;

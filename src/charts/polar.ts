@@ -1,6 +1,6 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
-import { useDataTransition } from "../hooks/useTransition"
+import { usePolarTransition } from "../hooks/useTransition"
 
 type Config = PolarType.Config
 type ClickLabelEvent = PolarType.ClickLabelEvent
@@ -155,8 +155,8 @@ class Polar {
   }
 
   private _initBar(config: Config) {
-    const dataTransitionHook = useDataTransition();
-    const tweens = dataTransitionHook.generatePolarTween(config, this._getAngleAxis(config), this._getRadius(config), this._lastConfig)
+    const dataTransitionHook = usePolarTransition(config, this._getAngleAxis(config), this._getRadius(config), this._getCenter(), this._lastConfig);
+    const tweens = dataTransitionHook.generateBarTween()
 
     let bars = this._barSelection;
     if (!bars) {
@@ -194,8 +194,8 @@ class Polar {
   }
 
   private _initBarText(config: Config) {
-    const dataTransitionHook = useDataTransition();
-    const tweenSet = dataTransitionHook.generatePolarTextTween(config, this._getAngleAxis(config), this._getRadius(config), this._getCenter(), this._lastConfig)
+    const dataTransitionHook = usePolarTransition(config, this._getAngleAxis(config), this._getRadius(config), this._getCenter(), this._lastConfig);
+    const tweenSet = dataTransitionHook.generateBarTextTween()
 
     let barText = this._barTextSelection;
     if (!barText) {

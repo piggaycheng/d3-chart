@@ -31,6 +31,7 @@ class Polar {
     }
   };
   private _finalConfig: Config;
+  private _lastConfig?: Config;
 
   private _svgSelection: d3.Selection<any, unknown, null, undefined>;
   private _barSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -155,7 +156,7 @@ class Polar {
 
   private _initBar(config: Config) {
     const dataTransitionHook = useDataTransition();
-    const tweens = dataTransitionHook.generatePolarTween(config, this._getAngleAxis(config), this._getRadius(config))
+    const tweens = dataTransitionHook.generatePolarTween(config, this._getAngleAxis(config), this._getRadius(config), this._lastConfig)
 
     let bars = this._barSelection;
     if (!bars) {
@@ -231,6 +232,7 @@ class Polar {
   }
 
   update(dataset: number[]) {
+    this._lastConfig = _.cloneDeep(this._finalConfig);
     this._finalConfig.data.dataset = dataset;
     this._initBar(this._finalConfig);
   }

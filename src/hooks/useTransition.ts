@@ -2,7 +2,7 @@ import * as d3 from "d3"
 
 export function useDataTransition() {
 
-  function generatePolarTween(config: PolarType.Config, angleAxis: d3.PieArcDatum<number>[], radius: number) {
+  function generatePolarTween(config: PolarType.Config, angleAxis: d3.PieArcDatum<number>[], radius: number, lastConfig?: PolarType.Config) {
     const domain = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const range = angleAxis.reduce<number[]>((acc, cur) => {
       acc.push(cur.endAngle);
@@ -18,7 +18,8 @@ export function useDataTransition() {
     if (config.radiusAxis?.outerPadding) bandScale.paddingOuter(config.radiusAxis?.outerPadding);
 
     const tweens = config.data.dataset.map((data, index) => {
-      const interpolate = d3.interpolateNumber(config.angleAxis!.startAngle!, linearScale(data));
+      const startAngle = lastConfig ? linearScale(lastConfig.data.dataset[index]) : config.angleAxis!.startAngle!;
+      const interpolate = d3.interpolateNumber(startAngle, linearScale(data));
       return function (t: number) {
         return d3.arc()({
           startAngle: config.angleAxis!.startAngle!,

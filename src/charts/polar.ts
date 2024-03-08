@@ -194,10 +194,6 @@ class Polar {
   }
 
   private _initBarText(config: Config) {
-    const radius = this._getRadius(config);
-    const svgCenter = this._getCenter();
-    const bandScale = this._getRadiusAxisBandScale(config);
-
     const dataTransitionHook = useDataTransition();
     const tweenSet = dataTransitionHook.generatePolarTextTween(config, this._getAngleAxis(config), this._getRadius(config), this._getCenter(), this._lastConfig)
 

@@ -35,6 +35,7 @@ export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieAr
     const tweenSet: {
       xTweens?: ((t: number) => string)[];
       yTweens?: ((t: number) => string)[];
+      textTween?: ((t: number) => string)[];
     } = {}
     tweenSet.xTweens = config.data.dataset.map((data, index) => {
       const middleAngle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
@@ -52,6 +53,13 @@ export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieAr
         return (svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.sin(interpolate(t) + Math.PI * 0.5)).toString()
       }
     });
+    tweenSet.textTween = config.data.dataset.map((data, index) => {
+      const startValue = lastConfig ? lastConfig.data.dataset[index] : config.angleAxis!.minValue!;
+      const interpolate = d3.interpolateRound(startValue, data)
+      return function (t: number) {
+        return interpolate(t).toString()
+      }
+    })
 
     return tweenSet
   }

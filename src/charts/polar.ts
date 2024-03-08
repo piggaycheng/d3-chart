@@ -210,11 +210,11 @@ class Polar {
       .join("text")
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
-      .text((data) => data)
       .transition()
       .duration(1000)
       .attrTween("x", (data, index) => tweenSet.xTweens![index])
       .attrTween("y", (data, index) => tweenSet.yTweens![index])
+      .textTween((data, index) => tweenSet.textTween![index])
   }
 
   private _getCenter() {

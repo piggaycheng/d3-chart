@@ -168,7 +168,7 @@ class Polar {
 
     bars
       .selectAll("path")
-      .data(config.radiusAxis!.categories)
+      .data(config.data.dataset)
       .join("path")
       .on("click", (e: PointerEvent) => {
         if (!config.data.click) return;
@@ -182,21 +182,24 @@ class Polar {
       })
       .attr("fill", `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`)
       .attr("fill-opacity", 1)
-      .attr("data-index", (data: string, index) => index)
-      .attr("data-category", (data: string, index) => data)
-      .attr("data-value", (data: string, index) => config.data.dataset[index])
+      .attr("data-index", (data, index) => index)
+      .attr("data-category", (data, index) => data)
+      .attr("data-value", (data, index) => config.data.dataset[index])
       .style("cursor", "pointer")
       .transition()
       .duration(1000)
-      .attrTween("d", (data: string, index) => tweens[index])
+      .attrTween("d", (data, index) => tweens[index])
 
-    // this._initBarText(bars, linearScale, config);
+    this._initBarText(this._finalConfig);
   }
 
-  private _initBarText(bars: d3.Selection<SVGGElement, unknown, null, undefined>, linearScale: d3.ScaleLinear<number, number, never>, config: Config) {
+  private _initBarText(config: Config) {
     const radius = this._getRadius(config);
     const svgCenter = this._getCenter();
     const bandScale = this._getRadiusAxisBandScale(config);
+
+    const dataTransitionHook = useDataTransition();
+    const tweenSet = dataTransitionHook.generatePolarTextTween(config, this._getAngleAxis(config), this._getRadius(config), this._getCenter(), this._lastConfig)
 
     let barText = this._barTextSelection;
     if (!barText) {
@@ -209,17 +212,13 @@ class Polar {
       .selectAll("text")
       .data(config.data.dataset)
       .join("text")
-      .attr("x", (data: number, index) => {
-        const middle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
-        return svgCenter[0] + (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.cos(middle - Math.PI * 0.5)
-      })
-      .attr("y", (data: number, index) => {
-        const middle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
-        return svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.sin(middle + Math.PI * 0.5)
-      })
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
       .text((data) => data)
+      .transition()
+      .duration(1000)
+      .attrTween("x", (data, index) => tweenSet.xTweens![index])
+      .attrTween("y", (data, index) => tweenSet.yTweens![index])
   }
 
   private _getCenter() {

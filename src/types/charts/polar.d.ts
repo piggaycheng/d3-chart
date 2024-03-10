@@ -15,6 +15,7 @@ declare namespace PolarType {
     maxValue?: number;
     minValue?: number;
     tick?: Tick;
+    dash?: number;
   }
 
   interface Tick {

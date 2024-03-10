@@ -23,7 +23,8 @@ class Polar {
       minValue: 0,
       tick: {
         distance: 5
-      }
+      },
+      dash: 5
     },
     radiusAxis: {
       categories: ["A", "B", "C"],
@@ -39,6 +40,7 @@ class Polar {
   private _svgSelection: d3.Selection<any, unknown, null, undefined>;
   private _barSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
   private _barTextSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private _angleAxisSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
     const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
@@ -75,13 +77,16 @@ class Polar {
       endY: -1 * radius * d3Sin(angleAxis[0].startAngle)
     }])
 
-    this._svgSelection.select("g").remove();
-    const angleAxisSelection = this._svgSelection
-      .append("g")
-      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`);
+    let angleAxisSelection = this._angleAxisSelection;
+    if (!angleAxisSelection) {
+      angleAxisSelection = this._svgSelection
+        .append("g")
+        .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`);
+      this._angleAxisSelection = angleAxisSelection;
+    }
 
-    angleAxisSelection
-      .append("path")
+    if (angleAxisSelection.select("path").empty()) angleAxisSelection.append("path")
+    angleAxisSelection.select("path")
       .attr("d", d3.arc()({
         innerRadius: 0,
         outerRadius: radius,
@@ -101,6 +106,7 @@ class Polar {
       .attr("x2", (data) => data.endX)
       .attr("y2", (data) => data.endY)
       .attr("stroke", "#000")
+      .attr("stroke-dasharray", config.angleAxis!.dash!)
 
     const ticks = this._getTicks(config);
     this._svgSelection
@@ -260,6 +266,7 @@ class Polar {
   update(dataset: number[]) {
     this._lastConfig = _.cloneDeep(this._finalConfig);
     this._finalConfig.data.dataset = dataset;
+    this._initAngleAxis(this._finalConfig);
     this._initBar(this._finalConfig);
   }
 }

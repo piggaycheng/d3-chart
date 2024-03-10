@@ -96,18 +96,10 @@ class Polar {
       .data(angleAxisLine)
       .enter()
       .append("line")
-      .attr("x1", (data) => {
-        return data.startX
-      })
-      .attr("y1", (data) => {
-        return data.startY
-      })
-      .attr("x2", (data) => {
-        return data.endX
-      })
-      .attr("y2", (data) => {
-        return data.endY
-      })
+      .attr("x1", (data) => data.startX)
+      .attr("y1", (data) => data.startY)
+      .attr("x2", (data) => data.endX)
+      .attr("y2", (data) => data.endY)
       .attr("stroke", "#000")
 
     const ticks = this._getTicks(config);

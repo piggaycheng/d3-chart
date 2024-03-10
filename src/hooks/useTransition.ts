@@ -44,16 +44,18 @@ export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieAr
       const middleAngle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
       const startAngle = lastConfig ? (linearScale(lastConfig.data.dataset[index]) + config.angleAxis!.startAngle!) / 2 : config.angleAxis!.startAngle!;
       const interpolate = d3.interpolateNumber(startAngle, middleAngle);
+      const textRadius = radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth();
       return function (t: number) {
-        return (svgCenter[0] + (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * d3Cos(interpolate(t))).toString()
+        return (textRadius * d3Cos(interpolate(t))).toString()
       }
     });
     tweenSet.yTweens = config.data.dataset.map((data, index) => {
       const middleAngle = (linearScale(data) + config.angleAxis!.startAngle!) / 2;
       const startAngle = lastConfig ? (linearScale(lastConfig.data.dataset[index]) + config.angleAxis!.startAngle!) / 2 : config.angleAxis!.startAngle!;
       const interpolate = d3.interpolateNumber(startAngle, middleAngle);
+      const textRadius = radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth();
       return function (t: number) {
-        return (svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * d3Sin(interpolate(t))).toString()
+        return (-1 * textRadius * d3Sin(interpolate(t))).toString()
       }
     });
     tweenSet.textTween = config.data.dataset.map((data, index) => {

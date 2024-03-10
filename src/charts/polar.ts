@@ -78,6 +78,7 @@ class Polar {
     const ticks = this._getTicks(config);
     this._svgSelection
       .append("g")
+      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("text")
       .data(ticks)
       .enter()
@@ -105,14 +106,14 @@ class Polar {
     const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const xArray = ticks.reduce<number[]>((acc, cur, index) => {
       if (index === 0) return acc
-      acc.push(svgCenter[0] + radius * d3Cos(angleAxis[index - 1].endAngle))
+      acc.push(radius * d3Cos(angleAxis[index - 1].endAngle))
       return acc
-    }, [svgCenter[0] + radius * d3Cos(config.angleAxis!.startAngle!)]);
+    }, [radius * d3Cos(config.angleAxis!.startAngle!)]);
     const yArray = ticks.reduce<number[]>((acc, cur, index) => {
       if (index === 0) return acc
-      acc.push(svgCenter[1] - radius * d3Sin(angleAxis[index - 1].endAngle))
+      acc.push(-1 * radius * d3Sin(angleAxis[index - 1].endAngle))
       return acc
-    }, [svgCenter[1] - radius * d3Sin(config.angleAxis!.startAngle!)]);
+    }, [-1 * radius * d3Sin(config.angleAxis!.startAngle!)]);
 
     return ticks.map((tick, index) => {
       return {
@@ -204,6 +205,7 @@ class Polar {
     if (!barText) {
       barText = this._svgSelection
         .append("g")
+        .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       this._barTextSelection = barText;
     }
 

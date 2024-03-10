@@ -1,4 +1,7 @@
 import * as d3 from "d3"
+import useAngle from "./useAngle"
+
+const { d3Sin, d3Cos } = useAngle()
 
 export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieArcDatum<number>[], radius: number, svgCenter: number[], lastConfig?: PolarType.Config) {
   const domain = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
@@ -42,7 +45,7 @@ export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieAr
       const startAngle = lastConfig ? (linearScale(lastConfig.data.dataset[index]) + config.angleAxis!.startAngle!) / 2 : config.angleAxis!.startAngle!;
       const interpolate = d3.interpolateNumber(startAngle, middleAngle);
       return function (t: number) {
-        return (svgCenter[0] + (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.cos(interpolate(t) - Math.PI * 0.5)).toString()
+        return (svgCenter[0] + (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * d3Cos(interpolate(t))).toString()
       }
     });
     tweenSet.yTweens = config.data.dataset.map((data, index) => {
@@ -50,7 +53,7 @@ export function usePolarTransition(config: PolarType.Config, angleAxis: d3.PieAr
       const startAngle = lastConfig ? (linearScale(lastConfig.data.dataset[index]) + config.angleAxis!.startAngle!) / 2 : config.angleAxis!.startAngle!;
       const interpolate = d3.interpolateNumber(startAngle, middleAngle);
       return function (t: number) {
-        return (svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * Math.sin(interpolate(t) + Math.PI * 0.5)).toString()
+        return (svgCenter[1] - (radius - bandScale(config.radiusAxis!.categories![index])! - 0.5 * bandScale.bandwidth()) * d3Sin(interpolate(t))).toString()
       }
     });
     tweenSet.textTween = config.data.dataset.map((data, index) => {

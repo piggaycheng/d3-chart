@@ -1,10 +1,13 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
 import { usePolarTransition } from "../hooks/useTransition"
+import useAngle from "../hooks/useAngle"
 
 type Config = PolarType.Config
 type ClickLabelEvent = PolarType.ClickLabelEvent
 type ClickDataEvent = PolarType.ClickDataEvent
+
+const { d3Sin, d3Cos } = useAngle()
 
 class Polar {
   private _defaultConfig: Config = {
@@ -102,14 +105,14 @@ class Polar {
     const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const xArray = ticks.reduce<number[]>((acc, cur, index) => {
       if (index === 0) return acc
-      acc.push(svgCenter[0] + radius * Math.cos(angleAxis[index - 1].endAngle - Math.PI * 0.5))
+      acc.push(svgCenter[0] + radius * d3Cos(angleAxis[index - 1].endAngle))
       return acc
-    }, [svgCenter[0] + radius * Math.cos(config.angleAxis!.startAngle! - Math.PI * 0.5)]);
+    }, [svgCenter[0] + radius * d3Cos(config.angleAxis!.startAngle!)]);
     const yArray = ticks.reduce<number[]>((acc, cur, index) => {
       if (index === 0) return acc
-      acc.push(svgCenter[1] - radius * Math.sin(angleAxis[index - 1].endAngle + Math.PI * 0.5))
+      acc.push(svgCenter[1] - radius * d3Sin(angleAxis[index - 1].endAngle))
       return acc
-    }, [svgCenter[1] - radius * Math.sin(config.angleAxis!.startAngle! + Math.PI * 0.5)]);
+    }, [svgCenter[1] - radius * d3Sin(config.angleAxis!.startAngle!)]);
 
     return ticks.map((tick, index) => {
       return {

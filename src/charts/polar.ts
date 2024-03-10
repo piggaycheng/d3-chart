@@ -58,21 +58,56 @@ class Polar {
   }
 
   private _initAngleAxis(config: Config) {
-    this._svgSelection
-      .append("g")
-      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
-      .selectAll("path")
-      .data(this._getAngleAxis(config))
-      .enter()
-      .append("path")
-      .attr("d", (data: any) => {
-        return d3.arc()({
-          ...data,
-          outerRadius: this._getRadius(config),
-          innerRadius: 0
-        })
+    const radius = this._getRadius(config);
+    const angleAxis = this._getAngleAxis(config);
+    const angleAxisLine = angleAxis.reduce((acc, cur) => {
+      acc.push({
+        startX: 0,
+        startY: 0,
+        endX: radius * d3Cos(cur.endAngle),
+        endY: -1 * radius * d3Sin(cur.endAngle)
       })
+      return acc
+    }, [{
+      startX: 0,
+      startY: 0,
+      endX: radius * d3Cos(angleAxis[0].startAngle),
+      endY: -1 * radius * d3Sin(angleAxis[0].startAngle)
+    }])
+
+    this._svgSelection.select("g").remove();
+    const angleAxisSelection = this._svgSelection
+      .append("g")
+      .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`);
+
+    angleAxisSelection
+      .append("path")
+      .attr("d", d3.arc()({
+        innerRadius: 0,
+        outerRadius: radius,
+        startAngle: config.angleAxis!.startAngle!,
+        endAngle: config.angleAxis!.endAngle!
+      }))
       .attr("fill", "none")
+      .attr("stroke", "black")
+
+    angleAxisSelection
+      .selectAll("line")
+      .data(angleAxisLine)
+      .enter()
+      .append("line")
+      .attr("x1", (data) => {
+        return data.startX
+      })
+      .attr("y1", (data) => {
+        return data.startY
+      })
+      .attr("x2", (data) => {
+        return data.endX
+      })
+      .attr("y2", (data) => {
+        return data.endY
+      })
       .attr("stroke", "#000")
 
     const ticks = this._getTicks(config);
@@ -101,7 +136,6 @@ class Polar {
   private _getTicks(config: Config) {
     const radius = this._getRadius(config) + config.angleAxis!.tick!.distance!;
     const angleAxis = this._getAngleAxis(config);
-    const svgCenter = this._getCenter();
 
     const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
     const xArray = ticks.reduce<number[]>((acc, cur, index) => {

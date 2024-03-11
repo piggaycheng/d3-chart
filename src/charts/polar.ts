@@ -22,7 +22,8 @@ class Polar {
       maxValue: 100,
       minValue: 0,
       tick: {
-        distance: 5
+        distance: 15,
+        length: 5
       },
       dash: 5
     },
@@ -97,10 +98,11 @@ class Polar {
       .attr("stroke", "black")
 
     angleAxisSelection
-      .selectAll("line")
+      .selectAll("line.axis")
       .data(angleAxisLine)
       .enter()
       .append("line")
+      .attr("class", "axis")
       .attr("x1", (data) => data.startX)
       .attr("y1", (data) => data.startY)
       .attr("x2", (data) => data.endX)
@@ -109,18 +111,29 @@ class Polar {
       .attr("stroke-dasharray", config.angleAxis!.dash!)
 
     const ticks = this._getTicks(config);
-    this._svgSelection
-      .append("g")
+    angleAxisSelection
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("text")
       .data(ticks)
       .enter()
       .append("text")
-      .text((tick) => tick.text)
-      .attr("x", (tick) => tick.x)
-      .attr("y", (tick) => tick.y)
+      .text((tick) => tick.text.value)
+      .attr("x", (tick) => tick.text.x)
+      .attr("y", (tick) => tick.text.y)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle");
+
+    angleAxisSelection
+      .selectAll("line.tick")
+      .data(ticks)
+      .enter()
+      .append("line")
+      .attr("class", "tick")
+      .attr("x1", (tick) => tick.tick.startX)
+      .attr("y1", (tick) => tick.tick.startY)
+      .attr("x2", (tick) => tick.tick.endX)
+      .attr("y2", (tick) => tick.tick.endY)
+      .attr("stroke", "#000")
   }
 
   private _getAngleAxis(config: Config) {
@@ -132,28 +145,42 @@ class Polar {
   }
 
   private _getTicks(config: Config) {
-    const radius = this._getRadius(config) + config.angleAxis!.tick!.distance!;
+    const radius = this._getRadius(config);
+    const finalRadius = this._getRadius(config) + config.angleAxis!.tick!.distance!;
     const angleAxis = this._getAngleAxis(config);
+    const tickLength = config.angleAxis!.tick!.length!;
 
     const ticks = d3.scaleLinear().domain([config.angleAxis!.minValue!, config.angleAxis!.maxValue!]).ticks(config.angleAxis!.scaleWeight!.length);
-    const xArray = ticks.reduce<number[]>((acc, cur, index) => {
-      if (index === 0) return acc
-      acc.push(radius * d3Cos(angleAxis[index - 1].endAngle))
+    const result = angleAxis.reduce((acc, cur, index) => {
+      acc.push({
+        text: {
+          value: ticks[index + 1],
+          x: finalRadius * d3Cos(cur.endAngle),
+          y: -1 * finalRadius * d3Sin(cur.endAngle)
+        },
+        tick: {
+          startX: radius * d3Cos(cur.endAngle),
+          startY: -1 * radius * d3Sin(cur.endAngle),
+          endX: (radius + tickLength) * d3Cos(cur.endAngle),
+          endY: -1 * (radius + tickLength) * d3Sin(cur.endAngle),
+        }
+      });
       return acc
-    }, [radius * d3Cos(config.angleAxis!.startAngle!)]);
-    const yArray = ticks.reduce<number[]>((acc, cur, index) => {
-      if (index === 0) return acc
-      acc.push(-1 * radius * d3Sin(angleAxis[index - 1].endAngle))
-      return acc
-    }, [-1 * radius * d3Sin(config.angleAxis!.startAngle!)]);
-
-    return ticks.map((tick, index) => {
-      return {
-        text: tick,
-        x: xArray[index],
-        y: yArray[index],
+    }, [{
+      text: {
+        value: ticks[0],
+        x: finalRadius * d3Cos(config.angleAxis!.startAngle!),
+        y: -1 * finalRadius * d3Sin(config.angleAxis!.startAngle!)
+      },
+      tick: {
+        startX: radius * d3Cos(config.angleAxis!.startAngle!),
+        startY: -1 * radius * d3Sin(config.angleAxis!.startAngle!),
+        endX: (radius + tickLength) * d3Cos(config.angleAxis!.startAngle!),
+        endY: -1 * (radius + tickLength) * d3Sin(config.angleAxis!.startAngle!),
       }
-    })
+    }])
+
+    return result
   }
 
   private _initRadiusAxis(config: Config) {

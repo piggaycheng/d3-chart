@@ -20,6 +20,7 @@ declare namespace PolarType {
 
   interface Tick {
     distance?: number;
+    length?: number;
   }
 
   interface RadiusAxis {

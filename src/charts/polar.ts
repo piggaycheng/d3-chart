@@ -2,6 +2,8 @@ import * as d3 from "d3"
 import * as _ from "lodash-es"
 import { usePolarTransition } from "../hooks/useTransition"
 import useAngle from "../hooks/useAngle"
+import useProxy from "../hooks/useProxy"
+import type { Target, SetterInterceptor } from "../hooks/useProxy"
 
 type Config = PolarType.Config
 type ClickLabelEvent = PolarType.ClickLabelEvent
@@ -49,15 +51,16 @@ class Polar {
         return srcValue;
       }
     });
-    this._finalConfig = finalConfig;
+
+    this._finalConfig = useProxy().createProxy<Config>(finalConfig, this._configUpdated, undefined);
 
     this._svgSelection = d3.select(el as any)
-      .attr("width", finalConfig!.width!)
-      .attr("height", finalConfig!.height!)
+      .attr("width", this._finalConfig!.width!)
+      .attr("height", this._finalConfig!.height!)
 
-    this._initAngleAxis(finalConfig);
-    this._initRadiusAxis(finalConfig);
-    this._initBar(finalConfig);
+    this._initAngleAxis(this._finalConfig);
+    this._initRadiusAxis(this._finalConfig);
+    this._initBar(this._finalConfig);
   }
 
   private _initAngleAxis(config: Config) {
@@ -288,6 +291,10 @@ class Polar {
   private _getRadius(config: Config) {
     const padding = config.padding!
     return Math.min(this._svgSelection.node().clientWidth / 2, this._svgSelection.node().clientHeight / 2) - padding
+  }
+
+  _configUpdated(target: Target, prop: string, value: any, receiver: any, parentProp?: string) {
+    console.log(target, prop, value, receiver, parentProp)
   }
 
   update(dataset: number[]) {

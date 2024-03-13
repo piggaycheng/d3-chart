@@ -1,9 +1,10 @@
 import * as d3 from "d3"
 import * as _ from "lodash-es"
+import { flatten, unflatten } from 'flat'
 import { usePolarTransition } from "../hooks/useTransition"
 import useAngle from "../hooks/useAngle"
 import useProxy from "../hooks/useProxy"
-import type { Target, SetterInterceptor } from "../hooks/useProxy"
+import type { Target } from "../hooks/useProxy"
 
 type Config = PolarType.Config
 type ClickLabelEvent = PolarType.ClickLabelEvent
@@ -51,8 +52,7 @@ class Polar {
         return srcValue;
       }
     });
-
-    this._finalConfig = useProxy().createProxy<Config>(finalConfig, this._configUpdated, undefined);
+    this._finalConfig = useProxy().createProxy<Config>(finalConfig, this._configUpdated, undefined, this);
 
     this._svgSelection = d3.select(el as any)
       .attr("width", this._finalConfig!.width!)
@@ -103,8 +103,7 @@ class Polar {
     angleAxisSelection
       .selectAll("line.axis")
       .data(angleAxisLine)
-      .enter()
-      .append("line")
+      .join("line")
       .attr("class", "axis")
       .attr("x1", (data) => data.startX)
       .attr("y1", (data) => data.startY)
@@ -118,8 +117,7 @@ class Polar {
       .attr("transform", `translate(${this._getCenter()[0]}, ${this._getCenter()[1]})`)
       .selectAll("text")
       .data(ticks)
-      .enter()
-      .append("text")
+      .join("text")
       .text((tick) => tick.text.value)
       .attr("x", (tick) => tick.text.x)
       .attr("y", (tick) => tick.text.y)
@@ -129,8 +127,7 @@ class Polar {
     angleAxisSelection
       .selectAll("line.tick")
       .data(ticks)
-      .enter()
-      .append("line")
+      .join("line")
       .attr("class", "tick")
       .attr("x1", (tick) => tick.tick.startX)
       .attr("y1", (tick) => tick.tick.startY)
@@ -294,14 +291,27 @@ class Polar {
   }
 
   _configUpdated(target: Target, prop: string, value: any, receiver: any, parentProp?: string) {
-    console.log(target, prop, value, receiver, parentProp)
+    const fullProp = parentProp ? `${parentProp}.${prop}` : prop;
+    switch (fullProp) {
+      case "dataset":
+        this._initBar(this._finalConfig);
+        break
+      case "angleAxis.startAngle":
+        this._initAngleAxis(this._finalConfig);
+        this._initBar(this._finalConfig);
+        break
+    }
   }
 
-  update(dataset: number[]) {
+  update(key: string, value: any) {
     this._lastConfig = _.cloneDeep(this._finalConfig);
-    this._finalConfig.data.dataset = dataset;
-    this._initAngleAxis(this._finalConfig);
-    this._initBar(this._finalConfig);
+    const temp: Record<string, any> = {}
+    temp[key] = value;
+    _.mergeWith(this._finalConfig, unflatten(temp), function (objValue, srcValue) {
+      if (_.isArray(objValue)) {
+        return srcValue;
+      }
+    });
   }
 }
 

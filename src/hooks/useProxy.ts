@@ -1,20 +1,21 @@
 export type Target = Record<string, any>;
 
-export type SetterInterceptor = (target: Target, prop: string, value: any, receiver: any, parentProp?: string) => void
+export type SetterCallback = (target: Target, prop: string, value: any, receiver: any, parentProp?: string) => void
 
 export default function () {
-  function createProxy<T extends Target>(target: T, setterInterceptor: SetterInterceptor, parentProp?: string) {
+  function createProxy<T extends Target>(target: T, setterCallback: SetterCallback, parentProp?: string, context?: any) {
     const handler = {
       get(target: T, prop: string, receiver: T) {
         if (typeof target[prop] === 'object' && target[prop] !== null) {
           const props = [parentProp, prop].filter((value) => value)
-          return createProxy(Reflect.get.apply(null, arguments), setterInterceptor, props.join("."))
+          return createProxy(Reflect.get.apply(null, arguments), setterCallback, props.join("."), context)
         }
         return Reflect.get.apply(null, arguments);
       },
       set(target: T, prop: string, value: any, receiver: T) {
-        setterInterceptor.apply(null, [...arguments, parentProp]);
-        return Reflect.set.apply(null, arguments)
+        Reflect.set.apply(null, arguments);
+        setterCallback.apply(context, [...arguments, parentProp]);
+        return true
       }
     }
 

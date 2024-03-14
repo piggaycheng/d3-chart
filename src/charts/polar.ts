@@ -5,6 +5,7 @@ import { usePolarTransition } from "../hooks/useTransition"
 import useAngle from "../hooks/useAngle"
 import useProxy from "../hooks/useProxy"
 import type { Target } from "../hooks/useProxy"
+import useConfig from "../hooks/useConfig"
 
 type Config = PolarType.Config
 type ClickLabelEvent = PolarType.ClickLabelEvent
@@ -47,11 +48,7 @@ class Polar {
   private _angleAxisSelection: d3.Selection<SVGGElement, unknown, null, undefined>;
 
   constructor(el: string | d3.BaseType, config?: Config) {
-    const finalConfig = _.mergeWith(this._defaultConfig, config, function (objValue, srcValue) {
-      if (_.isArray(objValue)) {
-        return srcValue;
-      }
-    });
+    const finalConfig = config ? useConfig().mergeConfig<Config>(this._defaultConfig, config) : this._defaultConfig;
     this._finalConfig = useProxy().createProxy<Config>(finalConfig, this._configUpdated, undefined, this);
 
     this._svgSelection = d3.select(el as any)
@@ -293,12 +290,17 @@ class Polar {
   _configUpdated(target: Target, prop: string, value: any, receiver: any, parentProp?: string) {
     const fullProp = parentProp ? `${parentProp}.${prop}` : prop;
     switch (fullProp) {
-      case "dataset":
+      case "data.dataset":
         this._initBar(this._finalConfig);
         break
       case "angleAxis.startAngle":
+      case "angleAxis.endAngle":
+      case "angleAxis.scaleWeight":
         this._initAngleAxis(this._finalConfig);
         this._initBar(this._finalConfig);
+        break
+      case "angleAxis.tick.distance":
+        this._initAngleAxis(this._finalConfig);
         break
     }
   }
@@ -307,11 +309,7 @@ class Polar {
     this._lastConfig = _.cloneDeep(this._finalConfig);
     const temp: Record<string, any> = {}
     temp[key] = value;
-    _.mergeWith(this._finalConfig, unflatten(temp), function (objValue, srcValue) {
-      if (_.isArray(objValue)) {
-        return srcValue;
-      }
-    });
+    useConfig().mergeConfig<Config>(this._finalConfig, unflatten(temp))
   }
 }
 

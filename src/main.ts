@@ -28,5 +28,5 @@ const polar = new Polar("svg", {
 });
 
 setTimeout(() => {
-  polar.update([100, 50, 100])
+  polar.update("data.dataset", [100, 70, 30])
 }, 3000);

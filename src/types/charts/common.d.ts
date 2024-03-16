@@ -1,5 +1,5 @@
 declare namespace Chart {
-  type ChartType = "polar"
+  type ChartType = "polar" | "worldMap"
 
   interface Config {
     type: ChartType

@@ -11,12 +11,17 @@ module.exports = {
     hot: true,
   },
   plugins: [
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      template: './public/index.html'
+    }),
     new CopyPlugin({
       patterns: [{
         from: "**/*",
-        to: "assets",
-        context: "public/"
+        to: "static/",
+        context: "public/",
+        globOptions: {
+          ignore: ['**/index.html']
+        }
       }]
     })
   ],

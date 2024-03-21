@@ -4,6 +4,7 @@ import { unflatten } from 'flat'
 import useProxy from "../hooks/useProxy"
 import type { Target } from "../hooks/useProxy"
 import useConfig from "../hooks/useConfig"
+import useWorldMap from "../hooks/useWorldMap"
 
 type Config = WorldMapType.Config
 
@@ -22,61 +23,30 @@ class WorldMap {
   };
   private _finalConfig: Config;
   private _lastConfig?: Config;
+  private _worldMapHook: WorldMapType.WorldMapHook;
 
   constructor(el: string | d3.BaseType, config: Config) {
     const finalConfig = config ? useConfig().mergeConfig<Config>(this._defaultConfig, config) : this._defaultConfig;
     this._finalConfig = useProxy().createProxy<Config>(finalConfig, this._configUpdated, undefined, this);
 
+    this._worldMapHook = useWorldMap();
+
     this._svgSelection = d3.select(el as any)
       .attr("width", config.width!)
       .attr("height", config.height!)
+    this._svgSelection
+      .append("g").attr("class", "countries")
+      .append("g").attr("class", "linePath")
 
     this._initWorldMap(config)
   }
 
   private async _initWorldMap(config: Config) {
-    let projection = this._projection;
-    if (!projection) {
-      projection = d3.geoOrthographic()
-        .center([0, 0])
-        .scale(250)
-        .clipAngle(90)
-        .translate([config.width! / 2, config.height! / 2])
-        .rotate([0, 0]);
-      this._projection = projection;
-    }
-
-    let path = this._path;
-    if (!path) {
-      path = d3.geoPath()
-        .projection(projection);
-      this._path = path;
-    }
-
-    let mapSelection = this._mapSelection;
-    if (!mapSelection) {
-      mapSelection = this._svgSelection.append("g");
-      this._mapSelection = mapSelection;
-    }
-    const geoData: any = await d3.json("/static/custom.geo.json");
-    mapSelection
-      .selectAll("path")
-      .data(geoData.features)
-      .join("path")
-      .attr("fill", "grey")
-      .attr("name-en", (data: any) => data.properties.name_en)
-      .attr("name-zht", (data: any) => data.properties.name_zht)
-      .style("stroke", "#ffff")
-      .transition()
-      .ease(d3.easeLinear)
-      .attrTween("d", (data: d3.GeoGeometryObjects) => {
-        const lastConfig = this._lastConfig ?? this._finalConfig;
-        const interpolate = d3.interpolateRound(lastConfig.map.angle, this._finalConfig.map.angle);
-        return (t) => {
-          projection.rotate([interpolate(t), 0])
-          return path(data) ?? ""
-        }
-      })
+    const { countries, borders, land } = await this._worldMapHook.initGeoData();
+    const projection = d3.geoAzimuthalEqualArea().fitExtent([[0, 0], [config.width!, config.width!]], { type: "Sphere" });
+    const geoPath = d3.geoPath(projection);
+    this._worldMapHook.renderSphere(this._svgSelection, geoPath);
+    this._worldMapHook.renderCountries(this._svgSelection, geoPath, countries);
   }
 
   private _configUpdated(target: Target, prop: string, value: any, receiver: any, parentProp?: string) {

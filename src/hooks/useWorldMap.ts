@@ -1,4 +1,7 @@
 import * as d3 from "d3"
+import * as topojson from "topojson-client"
+import { Topology, GeometryObject } from "topojson-specification"
+import * as GeoJSON from "geojson";
 
 export class Versor {
   static fromAngles([l, p, g]: number[]) {
@@ -57,50 +60,66 @@ export class Versor {
 }
 
 export default function () {
-  async function* renderCanvas(width: number, height: number, tilt: number, land: d3.GeoPermissibleObjects, borders: d3.GeoPermissibleObjects, countries: any) {
-    const canvas = d3.create("canvas")
-      .attr("width", width)
-      .attr("height", height)
-    const context = canvas.node()?.getContext("2d")!;
-    const projection = d3.geoOrthographic().fitExtent([[0, 0], [width, height]], { type: "Sphere" });
-    const path = d3.geoPath(projection, context);
+  async function initGeoData() {
+    const geoJson = await d3.json("/static/countries-110m.json") as Topology;
+    const countries = (topojson.feature(geoJson, geoJson.objects.countries) as GeoJSON.FeatureCollection).features
+    const borders = topojson.mesh(geoJson, geoJson.objects.countries as GeometryObject, (a, b) => a !== b)
+    const land = topojson.feature(geoJson, geoJson.objects.land)
 
-    function render(country: d3.GeoPermissibleObjects, arc?: d3.GeoPermissibleObjects) {
-      context.clearRect(0, 0, width, height);
-      context.beginPath(), path(land), context.fillStyle = "#ccc", context.fill();
-      context.beginPath(), path(country), context.fillStyle = "#f00", context.fill();
-      context.beginPath(), path(borders), context.strokeStyle = "#fff", context.lineWidth = 0.5, context.stroke();
-      context.beginPath(), path({ type: "Sphere" }), context.strokeStyle = "#000", context.lineWidth = 1.5, context.stroke();
-      context.beginPath();
-      if (arc) path(arc)
-      context.stroke();
-      return context.canvas;
-    }
-
-    let p1: [number, number], p2: [number, number] = [0, 0], r1, r2 = [0, 0, 0];
-    for (const country of countries) {
-      yield render(country);
-
-      p1 = p2, p2 = d3.geoCentroid(country);
-      r1 = r2, r2 = [-p2[0], tilt - p2[1], 0];
-      const ip = d3.geoInterpolate(p1, p2);
-      const iv = Versor.interpolateAngles(r1, r2);
-
-      await d3.transition()
-        .duration(1250)
-        .tween("render", () => t => {
-          projection.rotate(iv(t) as [number, number, number]);
-          render(country, { type: "LineString", coordinates: [p1, ip(t)] });
-        })
-        .transition()
-        .tween("render", () => t => {
-          render(country, { type: "LineString", coordinates: [ip(t), p2] });
-        })
-        .end();
+    return {
+      countries,
+      borders,
+      land
     }
   }
 
+  function renderSphere(d3SvgEl: d3.Selection<SVGGElement, unknown, null, undefined>, geoPath: d3.GeoPath) {
+    d3SvgEl
+      .append("path")
+      .attr("d", geoPath({ type: "Sphere" }))
+      .attr("fill", "none")
+      .attr("stroke", "black")
+  }
+
+  function renderCountries(d3SvgEl: d3.Selection<SVGGElement, unknown, null, undefined>, geoPath: d3.GeoPath, countries: GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>[]) {
+    d3SvgEl.select(".countries")
+      .selectAll("path")
+      .data(countries)
+      .join("path")
+      .attr("d", geoPath)
+      .attr("fill", "#ccc")
+      .attr("data-id", d => d.id ?? null)
+  }
+
+  function renderLinePath(d3SvgEl: d3.Selection<SVGGElement, unknown, null, undefined>, geoPath: d3.GeoPath, srcCountry: GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>, destCountry: GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>) {
+    const p1 = d3.geoCentroid(srcCountry);
+    const p2 = d3.geoCentroid(destCountry);
+    const ip = d3.geoInterpolate(p1, p2)
+
+    d3SvgEl.select(".linePath")
+      .append("path")
+      .attr("fill", "none")
+      .attr("stroke-width", 1.5)
+      .attr("stroke", "black")
+      .transition()
+      .duration(1250)
+      .attrTween("d", () => t => {
+        return geoPath({ type: "LineString", coordinates: [p1, ip(t)] }) ?? ""
+      })
+      .transition()
+      .duration(1250)
+      .attrTween("d", () => t => {
+        return geoPath({ type: "LineString", coordinates: [ip(t), p2] }) ?? ""
+      })
+      .on("end", function () {
+        d3.select(this).remove()
+      })
+  }
+
   return {
-    renderCanvas
+    initGeoData,
+    renderSphere,
+    renderCountries,
+    renderLinePath
   }
 }

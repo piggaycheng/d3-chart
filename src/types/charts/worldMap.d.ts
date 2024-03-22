@@ -1,4 +1,8 @@
 declare namespace WorldMapType {
+  type Countries = GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>[];
+  type Borders = GeoJSON.MultiLineString;
+  type Land = GeoJSON.FeatureCollection<GeoJSON.Geometry, GeoJSON.GeoJsonProperties> | GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>;
+
   interface Config extends Chart.Config {
     width?: number;
     height?: number;
@@ -11,9 +15,9 @@ declare namespace WorldMapType {
 
   interface WorldMapHook {
     initGeoData: () => Promise<{
-      countries: GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>[];
-      borders: GeoJSON.MultiLineString;
-      land: GeoJSON.FeatureCollection<GeoJSON.Geometry, GeoJSON.GeoJsonProperties> | GeoJSON.Feature<GeoJSON.Geometry, GeoJSON.GeoJsonProperties>;
+      countries: Countries;
+      borders: Borders;
+      land: Land;
     }>;
 
     renderSphere: (d3SvgEl: d3.Selection<SVGGElement, unknown, null, undefined>, geoPath: d3.GeoPath) => void;

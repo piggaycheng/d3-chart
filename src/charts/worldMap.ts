@@ -47,7 +47,7 @@ class WorldMap {
     const { countries, borders, land } = await this._worldMapHook.initGeoData();
     this._countries = countries;
 
-    const projection = d3.geoAzimuthalEqualArea().fitExtent([[0, 0], [config.width!, config.width!]], { type: "Sphere" });
+    const projection = d3.geoOrthographic().fitExtent([[0, 0], [config.width!, config.width!]], { type: "Sphere" });
     this._projection = projection;
     this._geoPath = d3.geoPath(projection);
 

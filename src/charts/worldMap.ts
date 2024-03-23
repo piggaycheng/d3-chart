@@ -79,6 +79,22 @@ class WorldMap {
     this._projection.rotate([angle, 0, 0])
     this._renderWorldMap()
   }
+
+  renderLinePath(src: string, dest: string) {
+    let srcCountry = null;
+    let destCountry = null;
+    for (let i = 0; i < this._countries.length; i++) {
+      if (this._countries[i].properties?.name === src) {
+        srcCountry = this._countries[i];
+      }
+      if (this._countries[i].properties?.name === dest) {
+        destCountry = this._countries[i];
+      }
+    }
+
+    if (srcCountry && destCountry)
+      this._worldMapHook.renderLinePath(this._svgSelection, this._geoPath, srcCountry, destCountry)
+  }
 }
 
 export default WorldMap
